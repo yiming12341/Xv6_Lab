@@ -8,13 +8,14 @@
 #define NBUCKET 5
 #define NKEYS 100000
 
+pthread_mutex_t lock[NBUCKET] = {PTHREAD_MUTEX_INITIALIZER}; // 每个散列桶一把锁
 struct entry {
   int key;
   int value;
   struct entry *next;
 };
 struct entry *table[NBUCKET];
-int keys[NKEYS];
+int keys[NKEYS];//一个随机化关键字的数组
 int nthread = 1;
 
 double
@@ -25,6 +26,7 @@ now()
  return tv.tv_sec + tv.tv_usec / 1000000.0;
 }
 
+//头插法
 static void 
 insert(int key, int value, struct entry **p, struct entry *n)
 {
@@ -35,26 +37,30 @@ insert(int key, int value, struct entry **p, struct entry *n)
   *p = e;
 }
 
+//使用头插法，在5个桶中插入元素
 static 
 void put(int key, int value)
 {
   int i = key % NBUCKET;
 
-  // is the key already present?
+  // is the key already present?根据键值来查找
   struct entry *e = 0;
   for (e = table[i]; e != 0; e = e->next) {
     if (e->key == key)
       break;
   }
   if(e){
-    // update the existing key.
+    // update the existing key.更新值
     e->value = value;
   } else {
+    pthread_mutex_lock(&lock[i]);//上锁
     // the new is new.
     insert(key, value, &table[i], table[i]);
+    pthread_mutex_unlock(&lock[i]);//解锁
   }
 }
 
+//将key放入5个桶
 static struct entry*
 get(int key)
 {
@@ -69,14 +75,15 @@ get(int key)
   return e;
 }
 
+//将线程号作为value放入
 static void *
 put_thread(void *xa)
 {
   int n = (int) (long) xa; // thread number
-  int b = NKEYS/nthread;
+  int b = NKEYS/nthread;//平均每一个线程的关键字数目
 
   for (int i = 0; i < b; i++) {
-    put(keys[b*n + i], n);
+    put(keys[b*n + i], n);//第n个线程的线程号作为value放入数据
   }
 
   return NULL;
@@ -85,7 +92,7 @@ put_thread(void *xa)
 static void *
 get_thread(void *xa)
 {
-  int n = (int) (long) xa; // thread number
+  int n = (int) (long) xa; // thread number线程标号
   int missing = 0;
 
   for (int i = 0; i < NKEYS; i++) {
@@ -133,14 +140,14 @@ main(int argc, char *argv[])
   //
   // now the gets
   //
-  t0 = now();
+  t0 = now();//计时器
   for(int i = 0; i < nthread; i++) {
     assert(pthread_create(&tha[i], NULL, get_thread, (void *) (long) i) == 0);
   }
   for(int i = 0; i < nthread; i++) {
     assert(pthread_join(tha[i], &value) == 0);
   }
-  t1 = now();
+  t1 = now();//计时器
 
   printf("%d gets, %.3f seconds, %.0f gets/second\n",
          NKEYS*nthread, t1 - t0, (NKEYS*nthread) / (t1 - t0));

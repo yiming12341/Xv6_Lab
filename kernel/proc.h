@@ -1,4 +1,5 @@
 // Saved registers for kernel context switches.
+//上下文
 struct context {
   uint64 ra;
   uint64 sp;
@@ -21,7 +22,7 @@ struct context {
 // Per-CPU state.
 struct cpu {
   struct proc *proc;          // The process running on this cpu, or null.
-  struct context context;     // swtch() here to enter scheduler().
+  struct context context;     // swtch() here to enter scheduler().上下文
   int noff;                   // Depth of push_off() nesting.
   int intena;                 // Were interrupts enabled before push_off()?
 };

@@ -10,6 +10,7 @@
 
 #define PIPESIZE 512
 
+//管道结构体
 struct pipe {
   struct spinlock lock;
   char data[PIPESIZE];
@@ -87,7 +88,7 @@ pipewrite(struct pipe *pi, uint64 addr, int n)
         release(&pi->lock);
         return -1;
       }
-      wakeup(&pi->nread);
+      wakeup(&pi->nread);//缓冲区满了，则唤醒读者来读取数据
       sleep(&pi->nwrite, &pi->lock);
     }
     if(copyin(pr->pagetable, &ch, addr + i, 1) == -1)

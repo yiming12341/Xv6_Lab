@@ -69,7 +69,7 @@ myproc(void) {
   push_off();
   struct cpu *c = mycpu();
   struct proc *p = c->proc;
-  pop_off();
+  pop_off();//启动中断
   return p;
 }
 
@@ -453,6 +453,7 @@ wait(uint64 addr)
 //  - swtch to start running that process.
 //  - eventually that process transfers control
 //    via swtch back to the scheduler.
+//进行调度，找到一个可以运行的进程
 void
 scheduler(void)
 {
@@ -475,7 +476,7 @@ scheduler(void)
         // to release its lock and then reacquire it
         // before jumping back to us.
         p->state = RUNNING;
-        c->proc = p;
+        c->proc = p;//设置当前进程
         swtch(&c->context, &p->context);
 
         // Process is done running for now.
@@ -498,6 +499,7 @@ scheduler(void)
 // be proc->intena and proc->noff, but that would
 // break in the few places where a lock is held but
 // there's no process.
+//检查进程切换的条件
 void
 sched(void)
 {
@@ -519,6 +521,7 @@ sched(void)
 }
 
 // Give up the CPU for one scheduling round.
+//与进程切换相关，实现了进程切换的一系列操作。
 void
 yield(void)
 {
@@ -531,6 +534,7 @@ yield(void)
 
 // A fork child's very first scheduling by scheduler()
 // will swtch to forkret.
+//用于释放p->lock
 void
 forkret(void)
 {
