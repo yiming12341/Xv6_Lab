@@ -25,6 +25,7 @@ statscopyin(char *buf, int sz) {
 
 // Copy from user to kernel.
 // Copy len bytes to dst from virtual address srcva in a given page table.
+//从虚拟地址srcva中拷贝len长度的bytes到dst
 // Return 0 on success, -1 on error.
 int
 copyin_new(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)

@@ -1,6 +1,7 @@
 // Physical memory allocator, for user processes,
 // kernel stacks, page-table pages,
 // and pipe buffers. Allocates whole 4096-byte pages.
+//物理内存的分配器
 
 #include "types.h"
 #include "param.h"
@@ -14,15 +15,17 @@ void freerange(void *pa_start, void *pa_end);
 extern char end[]; // first address after kernel.
                    // defined by kernel.ld.
 
+//空闲页的链表元素
 struct run {
   struct run *next;
 };
 
 struct {
-  struct spinlock lock;
+  struct spinlock lock;//用自旋锁保护空闲页
   struct run *freelist;
 } kmem;
 
+//用于初始化分配器
 void
 kinit()
 {
@@ -30,6 +33,7 @@ kinit()
   freerange(end, (void*)PHYSTOP);
 }
 
+//添加内存到空闲页表
 void
 freerange(void *pa_start, void *pa_end)
 {
@@ -43,6 +47,7 @@ freerange(void *pa_start, void *pa_end)
 // which normally should have been returned by a
 // call to kalloc().  (The exception is when
 // initializing the allocator; see kinit above.)
+//用于释放内存，防止旧的内容被访问
 void
 kfree(void *pa)
 {
